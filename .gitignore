@@ -1,0 +1,30 @@
+# 🔹 Ignorar arquivos do Python/Django
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+db.sqlite3
+*.sqlite3
+.env
+*.log
+media/
+staticfiles/
+
+# 🔹 Ignorar dependências do Node.js/Vue.js
+node_modules/
+dist/
+*.log
+*.cache
+
+# 🔹 Ignorar configurações do sistema operacional
+.DS_Store
+Thumbs.db
+
+# 🔹 Ignorar configurações de IDEs
+.vscode/
+.idea/
+*.swp
+
+# 🔹 Ignorar arquivos do Docker (se for usar)
+docker-compose.override.yml
