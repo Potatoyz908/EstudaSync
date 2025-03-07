@@ -83,7 +83,7 @@ DATABASES = {
         'USER': 'estudasync_user',
         'PASSWORD': 'senha', 
         'HOST': 'localhost',
-        'PORT': '5433',
+        'PORT': '5432',
     }
 }
 

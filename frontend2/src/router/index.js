@@ -1,7 +1,7 @@
 import { createRouter, createWebHistory } from "vue-router";
-import Identificacao from "./pages/Identificacao.vue";
-import Home from "./pages/Home.vue";
-import MeusEstudos from "./pages/MeusEstudos.vue";
+import Identificacao from "@/views/Identificacao.vue";
+import Home from "@/views/Home.vue";
+import MeusEstudos from "@/views/MeusEstudos.vue";
 
 const routes = [
   { path: "/", component: Identificacao },

@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-import axios from "axios";
+import api from "../api"; // Agora usamos a configuração central do Axios
 
 export const useEstudaSyncStore = defineStore("estudasync", {
   state: () => ({
@@ -9,7 +9,7 @@ export const useEstudaSyncStore = defineStore("estudasync", {
   actions: {
     async fetchEstudos() {
       try {
-        const res = await axios.get("http://127.0.0.1:8000/estudos/");
+        const res = await api.get("/estudos/");
         this.estudos = res.data;
       } catch (error) {
         console.error("Erro ao buscar estudos:", error);
@@ -17,7 +17,7 @@ export const useEstudaSyncStore = defineStore("estudasync", {
     },
     async fetchRanking() {
       try {
-        const res = await axios.get("http://127.0.0.1:8000/pontuacoes/");
+        const res = await api.get("/pontuacoes/");
         this.ranking = res.data;
       } catch (error) {
         console.error("Erro ao buscar ranking:", error);
@@ -25,13 +25,13 @@ export const useEstudaSyncStore = defineStore("estudasync", {
     },
     async registrarEstudo(titulo, tempo) {
       try {
-        await axios.post("http://127.0.0.1:8000/estudos/", {
-          usuario: 1, // Substituir pelo ID do usuário autenticado depois
+        await api.post("/estudos/", {
+          usuario: localStorage.getItem("usuario"),
           titulo: titulo,
           tempo_estudado: tempo,
         });
-        await this.fetchEstudos();
-        await this.fetchRanking();
+        this.fetchEstudos();
+        this.fetchRanking();
       } catch (error) {
         console.error("Erro ao registrar estudo:", error);
       }
