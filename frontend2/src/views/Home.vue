@@ -1,19 +1,29 @@
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, onMounted, watchEffect } from "vue";
 import { useEstudaSyncStore } from "../store/estudasyncStore";
 import { useRouter } from "vue-router";
 
 const store = useEstudaSyncStore();
 const router = useRouter();
-const nomeUsuario = ref(localStorage.getItem("usuario") || "Usuário");
+const nomeUsuario = ref("Usuário");
+
+// Atualiza os dados ao entrar na página
+onMounted(() => {
+  nomeUsuario.value = localStorage.getItem("usuario_nome") || "Usuário";
+  store.usuarioId = localStorage.getItem("usuario_id");
+  store.fetchEstudos(); // 🔥 Agora carrega os estudos corretamente
+  store.fetchRanking();
+});
+
+// Garante que o nome do usuário seja atualizado
+watchEffect(() => {
+  nomeUsuario.value = localStorage.getItem("usuario_nome") || "Usuário";
+});
+
 const titulo = ref("");
 const tempo = ref("");
 const isLoading = ref(false);
 const errorMessage = ref("");
-
-onMounted(() => {
-  store.fetchRanking();
-});
 
 const registrarEstudo = async () => {
   if (titulo.value && tempo.value > 0) {

@@ -1,39 +1,25 @@
-<script>
-import Sidebar from "@/components/sidebar/Sidebar";
-import { sidebarWidth } from "@/components/sidebar/state";
-export default {
-  components: { Sidebar },
-  setup() {
-    return { sidebarWidth };
-  },
-};
+<script setup>
+import Sidebar from "@/components/sidebar/Sidebar.vue";
+import { RouterView } from "vue-router";
 </script>
+
 <template>
-  <Sidebar />
-  <div :style="{ 'margin-left': sidebarWidth }">
-    <router-view />
+  <div class="layout">
+    <Sidebar />
+    <div class="content">
+      <RouterView />
+    </div>
   </div>
 </template>
 
 <style>
-#app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-}
-
-#nav {
-  padding: 30px;
-}
-
-#nav a {
-  font-weight: bold;
-  color: #2c3e50;
-}
-
-#nav a.router-link-exact-active {
-  color: #42b983;
+/* Remove margens e preenchimentos do body e html */
+html,
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden; /* Evita rolagem indesejada */
 }
 </style>

@@ -7,4 +7,16 @@ const api = axios.create({
   },
 });
 
+export const loginUsuario = async (nome) => {
+  try {
+    const response = await api.post("/login/", { nome });
+    localStorage.setItem("usuario_id", response.data.id);
+    localStorage.setItem("usuario_nome", response.data.nome);
+    return response.data;
+  } catch (error) {
+    console.error("Erro no login:", error);
+    return null;
+  }
+};
+
 export default api;
