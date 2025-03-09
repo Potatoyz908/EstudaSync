@@ -2,10 +2,22 @@
 import { ref, onMounted, watchEffect } from "vue";
 import { useEstudaSyncStore } from "../store/estudasyncStore";
 import { useRouter } from "vue-router";
+import { computed } from "vue";
 
 const store = useEstudaSyncStore();
 const router = useRouter();
 const nomeUsuario = ref("Usuário");
+const mostrarTabelaPontuacao = ref(false); // Estado da tabela de pontuação
+const rankingOrdenado = computed(() => {
+  return [...store.ranking].sort((a, b) => b.pontos - a.pontos);
+});
+
+// 🔥 Variáveis reativas adicionadas corretamente
+const titulo = ref("");
+const tempo = ref("");
+const isLoading = ref(false);
+const errorMessage = ref("");
+const successMessage = ref("");
 
 // Atualiza os dados ao entrar na página
 onMounted(() => {
@@ -20,31 +32,9 @@ watchEffect(() => {
   nomeUsuario.value = localStorage.getItem("usuario_nome") || "Usuário";
 });
 
-const titulo = ref("");
-const tempo = ref("");
-const isLoading = ref(false);
-const errorMessage = ref("");
-const successMessage = ref("");
-
-const registrarEstudo = async () => {
-  if (titulo.value && tempo.value > 0) {
-    isLoading.value = true;
-    errorMessage.value = "";
-
-    try {
-      await store.registrarEstudo(titulo.value, parseInt(tempo.value));
-      titulo.value = "";
-      tempo.value = "";
-      successMessage.value = "Estudo registrado com sucesso!";
-      setTimeout(() => (successMessage.value = ""), 3000);
-    } catch (error) {
-      errorMessage.value = "Erro ao registrar estudo!";
-    }
-    isLoading.value = false;
-  } else {
-    errorMessage.value = "Preencha todos os campos!";
-    setTimeout(() => (errorMessage.value = ""), 3000);
-  }
+// Função para alternar a exibição da tabela
+const toggleTabelaPontuacao = () => {
+  mostrarTabelaPontuacao.value = !mostrarTabelaPontuacao.value;
 };
 
 // 🔥 FUNÇÃO PARA DEFINIR CLASSE DO RANKING 🔥
@@ -53,6 +43,39 @@ const getRankingClass = (index) => {
   if (index === 1) return "silver"; // 2º lugar - Prata
   if (index === 2) return "bronze"; // 3º lugar - Bronze
   return ""; // Demais posições não têm classe especial
+};
+const registrarEstudo = async () => {
+  if (!titulo.value.trim() || !tempo.value || tempo.value <= 0) {
+    errorMessage.value = "⚠️ Preencha todos os campos corretamente!";
+    successMessage.value = "";
+    setTimeout(() => (errorMessage.value = ""), 3000);
+    return;
+  }
+
+  isLoading.value = true;
+  errorMessage.value = "";
+  successMessage.value = "";
+
+  try {
+    await store.registrarEstudo(titulo.value, parseInt(tempo.value));
+
+    // Limpa os campos e exibe mensagem de sucesso
+    titulo.value = "";
+    tempo.value = "";
+    successMessage.value = "✅ Estudo registrado com sucesso!";
+    setTimeout(() => (successMessage.value = ""), 3000);
+
+    // Atualiza os dados após o registro
+    store.fetchEstudos();
+    store.fetchRanking();
+  } catch (error) {
+    errorMessage.value = `❌ Erro ao registrar estudo: ${
+      error.response?.data?.message || error.message
+    }`;
+    setTimeout(() => (errorMessage.value = ""), 5000);
+  }
+
+  isLoading.value = false;
 };
 </script>
 
@@ -118,23 +141,58 @@ const getRankingClass = (index) => {
             </thead>
             <tbody>
               <tr
-                v-for="(user, index) in store.ranking"
-                :key="user.id"
+                v-for="(user, index) in rankingOrdenado"
+                :key="index"
                 :class="getRankingClass(index)"
               >
                 <td>{{ index + 1 }}</td>
-                <td>{{ user.usuario }}</td>
-                <td class="points">{{ user.pontos }}</td>
+                <td>{{ user.usuario_nome || "Desconhecido" }}</td>
+                <td class="points">{{ user.pontos || 0 }}</td>
               </tr>
             </tbody>
           </table>
           <p v-if="!store.ranking.length" class="empty-message">
             🚀 Ainda não há dados no ranking. Seja o primeiro!
           </p>
+
+          <!-- 🔥 Botão para mostrar a pontuação -->
+          <button class="pontuacao-toggle" @click="toggleTabelaPontuacao">
+            📋 Como é calculada a pontuação?
+          </button>
+
+          <!-- 🔥 Tabela de Pontuação dentro do Ranking -->
+          <div v-if="mostrarTabelaPontuacao" class="pontuacao-box">
+            <table class="pontuacao-table">
+              <thead>
+                <tr>
+                  <th>⏳ Tempo</th>
+                  <th>🎯 Pontos</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>1 - 30 min</td>
+                  <td>10</td>
+                </tr>
+                <tr>
+                  <td>31 - 60 min</td>
+                  <td>25</td>
+                </tr>
+                <tr>
+                  <td>61 - 120 min</td>
+                  <td>50</td>
+                </tr>
+                <tr>
+                  <td>Acima de 120 min</td>
+                  <td>100</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
-      <!-- Botões de navegação -->
+      <!-- Botão de Navegação -->
       <div class="action-buttons">
         <button @click="router.push('/meus-estudos')" class="primary-button">
           📚 Meus Estudos
@@ -149,8 +207,8 @@ const getRankingClass = (index) => {
   min-height: 100vh;
   display: flex;
   justify-content: center;
-  background-color: #f5f5f5; /* 🔥 Define um fundo consistente */
-  overflow-x: hidden; /* 🔥 Evita scroll lateral */
+  background-color: #f5f5f5;
+  overflow-x: hidden;
 }
 
 .container {
@@ -158,24 +216,10 @@ const getRankingClass = (index) => {
   width: 100%;
   text-align: center;
   padding: 20px;
-  margin-top: -220px; /* 🔥 Ajuste o valor conforme necessário */
+  margin-top: -220px;
 }
 
-/* Garante que o conteúdo se ajuste corretamente */
-.dashboard-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
-  margin-bottom: 30px;
-}
-
-/* Ajustes para telas menores */
-@media (max-width: 768px) {
-  .dashboard-grid {
-    grid-template-columns: 1fr; /* 🔥 Mantém os elementos alinhados no mobile */
-  }
-}
-/* 🌍 Cores para o ranking */
+/* 🌍 Estilização do Ranking */
 .gold {
   background: gold;
   font-weight: bold;
@@ -192,14 +236,14 @@ const getRankingClass = (index) => {
   font-weight: bold;
 }
 
-/* 🎨 Estilos gerais */
+/* 🎨 Estilos Gerais */
 .page-container {
-  width: 80vw; /* 🔥 Ocupa toda a largura */
-  height: 50vh; /* 🔥 Ocupa toda a altura */
+  width: 80vw;
+  height: 50vh;
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: #1a1d3a; /* 🔥 Mude conforme necessário */
+  background-color: #1a1d3a;
   padding: 0;
   margin: 0;
   overflow-x: hidden;
@@ -209,6 +253,8 @@ const getRankingClass = (index) => {
   max-width: 900px;
   width: 100%;
   text-align: center;
+  margin: auto;
+  margin-top: 2%;
 }
 
 /* 🏆 Header */
@@ -231,30 +277,29 @@ const getRankingClass = (index) => {
   font-size: 25px;
 }
 
-/* 📱 Ajustando a grade para responsividade */
 .dashboard-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 20px;
   margin-bottom: 30px;
+  align-items: flex-start; /* 🔥 Impede que os cards cresçam juntos */
 }
 
-/* 🔄 Estilos para dispositivos menores */
 @media (max-width: 768px) {
   .dashboard-grid {
-    grid-template-columns: 1fr; /* Fica em uma única coluna */
+    grid-template-columns: 1fr;
   }
 }
 
 /* 📦 Cartões */
 .card {
-  background: rgb(255, 255, 255);
+  background: white;
   border-radius: 10px;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
   padding: 20px;
 }
 
-/* 📝 Formulário de registro de estudo */
+/* 📝 Formulário */
 .register-card .form-group {
   display: flex;
   flex-direction: column;
@@ -275,6 +320,13 @@ const getRankingClass = (index) => {
   border: 1px solid #ccc;
   border-radius: 6px;
   font-size: 14px;
+  transition: all 0.3s ease;
+}
+
+/* Efeito no Input ao Focar */
+.input:focus {
+  border-color: #6a11cb;
+  box-shadow: 0 0 8px rgba(106, 17, 203, 0.4);
 }
 
 /* 🔄 Ajuste para telas menores */
@@ -285,7 +337,7 @@ const getRankingClass = (index) => {
   }
 }
 
-/* 🎯 Botão de registro */
+/* 🎯 Botões */
 .button {
   width: 100%;
   max-width: 200px;
@@ -293,23 +345,23 @@ const getRankingClass = (index) => {
   background-color: #6a11cb;
   color: white;
   border: none;
-  border-radius: 6px;
+  border-radius: 25px;
   cursor: pointer;
   font-weight: bold;
-  transition: 0.3s;
+  transition: all 0.3s ease-in-out;
   text-align: center;
+  transform: scale(1);
 }
 
+/* 🚀 Animação ao passar o mouse */
 .button:hover {
   background-color: #5907a5;
+  transform: scale(1.05);
 }
 
-/* 🚀 Responsividade dos botões */
-@media (max-width: 600px) {
-  .button {
-    font-size: 14px;
-    padding: 10px;
-  }
+/* ⏬ Efeito ao clicar */
+.button:active {
+  transform: scale(0.95);
 }
 
 /* 📊 Ranking */
@@ -318,6 +370,12 @@ const getRankingClass = (index) => {
   border-collapse: collapse;
   margin-top: 10px;
   font-size: 14px;
+}
+.ranking-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between; /* 🔥 Mantém os elementos internos alinhados */
+  min-height: 250px; /* 🔥 Define uma altura mínima */
 }
 
 .ranking-table th,
@@ -338,30 +396,42 @@ const getRankingClass = (index) => {
   }
 }
 
-/* 🎯 Botões de ação */
+/* 🎯 Botões de Ação */
 .action-buttons {
+  bottom: 300px; /* 🔥 Define um espaço da parte inferior */
+  left: 67%; /* 🔥 Centraliza o botão */
+  transform: translateX(-50%); /* 🔥 Mantém alinhado no centro */
+  width: 100%;
   display: flex;
   justify-content: center;
   gap: 15px;
 }
 
-/* 🔥 Aumento do botão "Meus Estudos" */
+/* 🔥 Botão "Meus Estudos" */
 .primary-button {
   background: #6a11cb;
   color: white;
-  width: 300px; /* 🔥 Largura maior */
-  padding: 18px; /* 🔥 Aumenta a altura */
-  font-size: 1.3rem; /* 🔥 Texto maior */
-  border-radius: 10px; /* 🔥 Bordas arredondadas */
+  width: 300px;
+  padding: 18px;
+  font-size: 1.3rem;
+  border-radius: 25px;
   font-weight: bold;
   cursor: pointer;
-  transition: 0.3s;
-  border: none;
+  transition: all 0.3s ease-in-out;
   text-align: center;
+  transform: scale(1);
+  margin-left: 150%;
 }
 
+/* 🚀 Animação ao passar o mouse */
 .primary-button:hover {
   background: #5907a5;
+  transform: scale(1.05);
+}
+
+/* ⏬ Efeito ao clicar */
+.primary-button:active {
+  transform: scale(0.95);
 }
 
 /* 🔄 Ajustes para telas menores */
@@ -371,18 +441,20 @@ const getRankingClass = (index) => {
     width: 100%;
     gap: 10px;
   }
+
   .primary-button {
-    width: 100%; /* 🔥 Ocupa toda a largura */
-    font-size: 1.2rem; /* 🔥 Ajuste de texto */
+    width: 100%;
+    font-size: 1.2rem;
     padding: 16px;
   }
 }
 
+/* 🔹 Estilo dos Inputs no Formulário */
 .register-card .form-group {
   display: flex;
   flex-direction: column;
-  align-items: center; /* Centraliza os inputs */
-  margin-bottom: 15px;
+  align-items: center;
+  margin-bottom: 20px;
 }
 
 .register-card .form-group label {
@@ -391,15 +463,100 @@ const getRankingClass = (index) => {
   color: #333;
   text-align: left;
   width: 100%;
-  max-width: 300px; /* Limita a largura do label */
+  max-width: 300px;
 }
 
 .register-card .input {
   width: 100%;
-  max-width: 300px; /* 🔥 Define um limite de largura */
+  max-width: 300px;
   padding: 10px;
   border: 1px solid #ccc;
   border-radius: 6px;
   font-size: 14px;
+}
+.pontuacao-card {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  padding: 10px;
+  max-width: 250px;
+  font-size: 14px;
+  text-align: center;
+}
+
+.pontuacao-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.info-text {
+  font-size: 14px;
+  color: #555;
+  margin-bottom: 15px;
+}
+
+.pontuacao-toggle {
+  margin-top: 30px;
+  padding: 10px;
+  background-color: #6a11cb;
+  color: white;
+  border: none;
+  border-radius: 25px;
+  font-weight: bold;
+  cursor: pointer;
+  width: 50%;
+  transition: 0.3s;
+}
+
+.pontuacao-toggle:hover {
+  background-color: #5907a5;
+}
+
+/* 🔥 Caixa da Tabela de Pontuação */
+.pontuacao-box {
+  margin-top: 15px;
+  background: white;
+  padding: 10px;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* 🔥 Estilização da Tabela */
+.pontuacao-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.pontuacao-table th,
+.pontuacao-table td {
+  padding: 8px;
+  border: 1px solid #ddd;
+  text-align: center;
+}
+
+.pontuacao-table th {
+  background: #6a11cb;
+  color: white;
+}
+
+.pontuacao-table td {
+  background: #f9f9f9;
+}
+
+/* 📱 Ajustes responsivos */
+@media (max-width: 768px) {
+  .pontuacao-table {
+    font-size: 12px;
+  }
+
+  .pontuacao-table th,
+  .pontuacao-table td {
+    padding: 6px;
+  }
 }
 </style>
