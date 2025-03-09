@@ -8,6 +8,7 @@ class EstudoSerializer(serializers.ModelSerializer):
         fields = ['id', 'usuario_id', 'titulo', 'tempo_estudado', 'data']
 
 class PontuacaoSerializer(serializers.ModelSerializer):
+    usuario_nome = serializers.CharField(source='usuario.nome', read_only=True)
     class Meta:
         model = Pontuacao
         fields = '__all__'

@@ -3,7 +3,7 @@ from rest_framework.routers import DefaultRouter
 from .views import EstudoViewSet, PontuacaoViewSet, login_usuario
 
 router = DefaultRouter()
-router.register(r'estudos', EstudoViewSet)
+router.register(r'estudos', EstudoViewSet, basename="estudo")
 router.register(r'pontuacoes', PontuacaoViewSet)
 
 urlpatterns = [
