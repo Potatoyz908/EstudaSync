@@ -1,38 +1,58 @@
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, onMounted, onBeforeUnmount } from "vue";
 import { useRouter } from "vue-router";
 
 const router = useRouter();
-const isMobile = ref(window.innerWidth <= 768); // Detecta se é mobile
-const collapsed = ref(isMobile.value); // Se for mobile, inicia fechada
+const isMobile = ref(window.innerWidth <= 768);
+const collapsed = ref(isMobile.value);
+const showMobileSidebar = ref(false); // Estado para abrir/fechar o menu mobile
+
 const sidebarWidth = computed(() => (collapsed.value ? "80px" : "250px"));
 
 const toggleSidebar = () => {
   collapsed.value = !collapsed.value;
 };
 
+// Alternar o menu lateral para mobile
+const toggleMobileSidebar = () => {
+  showMobileSidebar.value = !showMobileSidebar.value;
+};
+
 // Função de logout
 const logout = () => {
   localStorage.removeItem("usuario_nome");
   localStorage.removeItem("usuario_id");
-  router.push("/"); // Redireciona para a página inicial
+  router.push("/");
 };
 
 // Atualiza o estado se a tela for redimensionada
-window.addEventListener("resize", () => {
+const handleResize = () => {
   isMobile.value = window.innerWidth <= 768;
-  if (isMobile.value) collapsed.value = true; // Fecha a sidebar no mobile
+  if (isMobile.value) {
+    collapsed.value = true; // Fecha a sidebar desktop no mobile
+    showMobileSidebar.value = false; // Fecha o menu mobile ao redimensionar
+  }
+};
+
+// Adiciona e remove o listener de redimensionamento
+onMounted(() => {
+  window.addEventListener("resize", handleResize);
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener("resize", handleResize);
 });
 </script>
 
 <template>
   <div>
-    <!-- Ícone de Menu para Mobile -->
-    <button v-if="isMobile" class="menu-button" @click="toggleSidebar">
+    <!-- 🔥 Botão de Menu para Mobile -->
+    <button v-if="isMobile" class="menu-button" @click="toggleMobileSidebar">
       ☰
     </button>
 
-    <div class="sidebar" :style="{ width: sidebarWidth }">
+    <!-- 🌟 Sidebar Desktop (Mantida) -->
+    <div class="sidebar" v-if="!isMobile" :style="{ width: sidebarWidth }">
       <h1 class="sidebar-title">
         <span v-if="collapsed"> ES </span>
         <span v-else> EstudaSync </span>
@@ -49,7 +69,6 @@ window.addEventListener("resize", () => {
         </button>
       </nav>
 
-      <!-- 🔥 Botão de Logout -->
       <button @click="logout" class="logout-button">
         <i class="fas fa-sign-out-alt"></i>
         <span v-if="!collapsed"> Sair </span>
@@ -63,11 +82,37 @@ window.addEventListener("resize", () => {
         <i class="fas fa-angle-double-left"></i>
       </span>
     </div>
+
+    <!-- 🔥 Sidebar Mobile (Nova) -->
+    <div class="mobile-sidebar" v-if="isMobile && showMobileSidebar">
+      <button class="close-button" @click="toggleMobileSidebar">✖</button>
+      <h1 class="sidebar-title">EstudaSync</h1>
+
+      <nav>
+        <button @click="router.push('/home')" class="sidebar-link">
+          <i class="fas fa-home"></i> Página Inicial
+        </button>
+        <button @click="router.push('/meus-estudos')" class="sidebar-link">
+          <i class="fas fa-book"></i> Meus Estudos
+        </button>
+      </nav>
+
+      <button @click="logout" class="logout-button">
+        <i class="fas fa-sign-out-alt"></i> Sair
+      </button>
+    </div>
+
+    <!-- 🔥 Sobreposição no fundo ao abrir o menu -->
+    <div
+      v-if="showMobileSidebar"
+      class="overlay"
+      @click="toggleMobileSidebar"
+    ></div>
   </div>
 </template>
 
 <style scoped>
-/* Sidebar */
+/* 🌟 Sidebar Desktop */
 .sidebar {
   position: fixed;
   top: 0;
@@ -110,14 +155,14 @@ window.addEventListener("resize", () => {
 
 .sidebar-link:hover {
   background-color: #38a169;
+  border-radius: 25px;
 }
 
-/* 🔥 Estilização do botão de Logout */
 .logout-button {
   background: none;
   border: none;
   color: white;
-  width: 100%;
+  width: 80%;
   padding: 15px;
   text-align: left;
   cursor: pointer;
@@ -126,15 +171,11 @@ window.addEventListener("resize", () => {
   font-size: 1.6rem;
 }
 
-.logout-button i {
-  margin-right: 10px;
-}
-
 .logout-button:hover {
   background-color: #e53e3e;
+  border-radius: 25px;
 }
 
-/* Ícone de colapso da sidebar */
 .collapse-icon {
   position: absolute;
   bottom: 20px;
@@ -147,10 +188,10 @@ window.addEventListener("resize", () => {
   transform: rotate(180deg);
 }
 
-/* Botão de menu para dispositivos móveis */
+/* 🔥 Botão de menu para dispositivos móveis */
 .menu-button {
   display: none;
-  position: absolute;
+  position: fixed;
   top: 15px;
   left: 15px;
   font-size: 24px;
@@ -161,15 +202,53 @@ window.addEventListener("resize", () => {
   z-index: 1100;
 }
 
-/* Esconde a sidebar em telas menores */
 @media (max-width: 768px) {
-  .sidebar {
-    width: 80px;
-    transition: width 0.3s ease;
-  }
-
   .menu-button {
     display: block;
   }
+
+  .sidebar {
+    display: none; /* 🔥 Esconde a sidebar desktop em mobile */
+  }
+}
+
+/* 🌟 Sidebar Mobile */
+.mobile-sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 250px;
+  height: 100%;
+  background-color: #2f855a;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1rem;
+  z-index: 1200;
+  transform: translateX(0);
+  transition: transform 0.3s ease-in-out;
+}
+
+/* ❌ Botão para fechar o menu */
+.close-button {
+  align-self: flex-end;
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: white;
+  cursor: pointer;
+  margin-bottom: 10px;
+}
+
+/* 🔥 Sobreposição no fundo ao abrir o menu */
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1100;
 }
 </style>

@@ -1,15 +1,15 @@
 <script setup>
 import Sidebar from "@/components/sidebar/Sidebar.vue";
-import { ref, computed } from "vue";
+import { ref, computed, watchEffect } from "vue";
 
 const isMobile = ref(window.innerWidth <= 768);
-const collapsed = ref(isMobile.value);
-const contentMargin = computed(() => (collapsed.value ? "80px" : "250px"));
+const sidebarOpen = ref(!isMobile.value);
+const contentMargin = computed(() => (isMobile.value ? "0" : "250px"));
 
-// Atualiza o estado se a tela for redimensionada
-window.addEventListener("resize", () => {
+// Atualiza o estado ao redimensionar
+watchEffect(() => {
   isMobile.value = window.innerWidth <= 768;
-  if (isMobile.value) collapsed.value = true;
+  if (isMobile.value) sidebarOpen.value = false;
 });
 </script>
 
@@ -30,33 +30,36 @@ body {
   padding: 0;
   width: 100vw;
   height: 100vh;
-  overflow: hidden;
-  overflow-x: hidden; /* 🔥 Evita rolagem lateral */
-  background-color: #1a1d3a; /* 🔥 ALTERE PARA A COR QUE DESEJAR */
+  overflow-x: hidden;
+  overflow-y: hidden;
+  background-color: #1a1d3a;
 }
 
-/* 🔥 Ajusta o layout para preencher a tela */
+/* 🔥 Ajusta o layout */
 .layout {
   display: flex;
   width: 100vw;
   height: 100vh;
 }
 
-/* 🔥 Ajusta o conteúdo para não herdar fundo branco */
+/* 🔥 Ajusta o conteúdo */
 .content {
   flex-grow: 1;
   padding: 20px;
   transition: margin-left 0.3s ease;
-  width: 100%;
+  width: calc(
+    100vw - 250px
+  ); /* 🔥 Garante que o conteúdo ocupe o espaço certo */
   min-height: 100vh;
-  background-color: transparent; /* 🔥 EVITA FUNDO BRANCO */
+  background-color: transparent;
 }
 
-/* 🔥 No mobile, garante que não fique espaço lateral */
+/* 🔥 No mobile, evita que o conteúdo fique escondido */
 @media (max-width: 768px) {
   .content {
+    width: 100%;
     margin-left: 0 !important;
-    padding: 10px;
+    padding: 15px;
   }
 }
 </style>

@@ -6,12 +6,16 @@ export const useEstudaSyncStore = defineStore("estudasync", {
     estudos: [],
     ranking: [],
     usuarioId: localStorage.getItem("usuario_id") || null,
+    mostrarTodosEstudos: false, // 🔥 Novo estado para alternar a exibição
   }),
   actions: {
     async fetchEstudos() {
-      if (!this.usuarioId) return;
       try {
-        const res = await api.get(`/estudos/?usuario_id=${this.usuarioId}`);
+        let url = "/estudos/";
+        if (!this.mostrarTodosEstudos && this.usuarioId) {
+          url += `?usuario_id=${this.usuarioId}`;
+        }
+        const res = await api.get(url);
         this.estudos = res.data;
       } catch (error) {
         console.error(
@@ -51,6 +55,10 @@ export const useEstudaSyncStore = defineStore("estudasync", {
           error.response?.data || error.message
         );
       }
+    },
+    alternarFiltroEstudos() {
+      this.mostrarTodosEstudos = !this.mostrarTodosEstudos;
+      this.fetchEstudos(); // 🔥 Atualiza a lista de estudos após a alteração
     },
   },
 });
