@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "http://127.0.0.1:8000", // Ajuste conforme necessário
+  baseURL: "https://estudasync-production.up.railway.app", // Ajuste conforme necessário
   headers: {
     "Content-Type": "application/json",
   },
