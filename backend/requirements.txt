@@ -2,3 +2,4 @@ Django
 djangorestframework
 psycopg2-binary
 django-cors-headers
+dj-database-url
