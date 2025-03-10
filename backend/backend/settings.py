@@ -27,8 +27,14 @@ SECRET_KEY = 'django-insecure-a2)r#2)%3re5xufhd7j_w7$nnfxe^md3*#gbaqp7wl0m93cj+k
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    "127.0.0.1",
+    "localhost",
+    "estudasync-production.up.railway.app",  # Adiciona o domínio do Railway
+]
 
+# Permite que o domínio seja lido de variáveis de ambiente também
+ALLOWED_HOSTS.extend(os.getenv("ALLOWED_HOSTS", "").split(","))
 
 # Application definition
 
