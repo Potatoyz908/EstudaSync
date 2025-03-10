@@ -101,7 +101,7 @@ const registrarEstudo = async () => {
             <input
               id="titulo"
               v-model="titulo"
-              placeholder="Ex: Aula de Vue.js"
+              placeholder="Ex: Videoaula 01 - Prof.Fulano"
               class="input"
             />
           </div>
