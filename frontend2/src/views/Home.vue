@@ -146,7 +146,11 @@ const registrarEstudo = async () => {
                 :class="getRankingClass(index)"
               >
                 <td>{{ index + 1 }}</td>
-                <td>{{ user.usuario_nome || "Desconhecido" }}</td>
+                <td>
+                  <router-link :to="'/perfil/' + user.id" class="perfil-link">
+                    {{ user.usuario_nome || "Desconhecido" }}
+                  </router-link>
+                </td>
                 <td class="points">{{ user.pontos || 0 }}</td>
               </tr>
             </tbody>
@@ -203,6 +207,15 @@ const registrarEstudo = async () => {
 </template>
 
 <style scoped>
+.perfil-link {
+  text-decoration: none;
+  color: #6a11cb;
+  font-weight: bold;
+}
+
+.perfil-link:hover {
+  text-decoration: underline;
+}
 .page-container {
   min-height: 100vh;
   display: flex;

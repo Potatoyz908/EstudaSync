@@ -9,4 +9,4 @@ router.register(r'pontuacoes', PontuacaoViewSet)
 urlpatterns = [
     path('', include(router.urls)),
     path("login/", login_usuario, name="login_usuario"),
-]
+    path('usuarios/<int:pk>/perfil/', EstudoViewSet.as_view({'get': 'perfil'}), name='usuario-perfil'),]
