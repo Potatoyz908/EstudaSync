@@ -56,6 +56,36 @@ export const useEstudaSyncStore = defineStore("estudasync", {
         );
       }
     },
+    async editarEstudo(estudoId, novoTitulo, novoTempo) {
+      try {
+        const usuarioId = this.usuarioId; // Pega o usuário logado
+
+        await api.put(`/estudos/${estudoId}/`, {
+          usuario_id: parseInt(usuarioId), // ✅ Adiciona o usuário na requisição
+          titulo: novoTitulo,
+          tempo_estudado: parseInt(novoTempo),
+        });
+        console.log(`Estudo ${estudoId} atualizado com sucesso!`);
+        this.fetchEstudos(); // Atualiza a lista após edição
+      } catch (error) {
+        console.error(
+          "Erro ao editar estudo:",
+          error.response?.data || error.message
+        );
+      }
+    },
+    async excluirEstudo(estudoId) {
+      try {
+        await api.delete(`/estudos/${estudoId}/`);
+        console.log(`Estudo ${estudoId} excluído com sucesso!`);
+        this.fetchEstudos(); // Atualiza a lista após exclusão
+      } catch (error) {
+        console.error(
+          "Erro ao excluir estudo:",
+          error.response?.data || error.message
+        );
+      }
+    },
     alternarFiltroEstudos() {
       this.mostrarTodosEstudos = !this.mostrarTodosEstudos;
       this.fetchEstudos(); // 🔥 Atualiza a lista de estudos após a alteração

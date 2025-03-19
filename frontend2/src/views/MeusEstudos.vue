@@ -1,10 +1,13 @@
 <script setup>
-import { onMounted, computed } from "vue";
+import { onMounted, computed, ref } from "vue";
 import { useEstudaSyncStore } from "../store/estudasyncStore";
 import { useRouter } from "vue-router";
 
 const store = useEstudaSyncStore();
 const router = useRouter();
+const estudoEditando = ref(null); // Estado para armazenar o estudo sendo editado
+const novoTitulo = ref(""); // Novo título ao editar
+const novoTempo = ref(""); // Novo tempo ao editar
 
 onMounted(() => {
   store.fetchEstudos();
@@ -28,6 +31,42 @@ const totalTempoEstudado = computed(() => {
   );
   return formatarTempo(totalMinutos);
 });
+
+// 🔥 Excluir estudo
+const excluirEstudo = async (id) => {
+  if (confirm("Tem certeza que deseja excluir este estudo?")) {
+    await store.excluirEstudo(id);
+    store.fetchEstudos();
+  }
+};
+
+// 🔥 Iniciar edição
+const editarEstudo = (estudo) => {
+  estudoEditando.value = estudo;
+  novoTitulo.value = estudo.titulo;
+  novoTempo.value = estudo.tempo_estudado;
+};
+
+// 🔥 Salvar edição
+const salvarEdicao = async () => {
+  if (!novoTitulo.value.trim() || !novoTempo.value) {
+    alert("Preencha todos os campos corretamente!");
+    return;
+  }
+
+  await store.editarEstudo(
+    estudoEditando.value.id,
+    novoTitulo.value,
+    novoTempo.value
+  );
+  estudoEditando.value = null;
+  store.fetchEstudos();
+};
+
+// 🔥 Cancelar edição
+const cancelarEdicao = () => {
+  estudoEditando.value = null;
+};
 </script>
 
 <template>
@@ -46,13 +85,68 @@ const totalTempoEstudado = computed(() => {
 
     <ul v-if="store.estudos.length" class="estudo-list">
       <li v-for="estudo in store.estudos" :key="estudo.id" class="estudo-item">
-        <span class="titulo">📚 {{ estudo.titulo }}</span> - ⏱️
-        {{ formatarTempo(estudo.tempo_estudado) }}
+        <div class="estudo-info">
+          <span class="titulo">📚 {{ estudo.titulo }}</span> - ⏱️
+          {{ formatarTempo(estudo.tempo_estudado) }}
+
+          <!-- 🔥 Exibe o nome do usuário se não for o próprio -->
+          <p
+            v-if="
+              store.usuarioId && estudo.usuario_id !== parseInt(store.usuarioId)
+            "
+            class="user-name"
+          >
+            👤 {{ estudo.usuario_nome || "Usuário Desconhecido" }}
+          </p>
+        </div>
+
+        <!-- 🔥 Botões de edição/exclusão (Apenas para estudos do usuário) -->
+        <div
+          class="actions"
+          v-if="
+            store.usuarioId && estudo.usuario_id === parseInt(store.usuarioId)
+          "
+        >
+          <button class="edit-button" @click="editarEstudo(estudo)">
+            ✏️ Editar
+          </button>
+          <button class="delete-button" @click="excluirEstudo(estudo.id)">
+            🗑️ Excluir
+          </button>
+        </div>
       </li>
     </ul>
     <p v-else class="message">⚠️ Nenhum estudo registrado ainda.</p>
 
     <button @click="router.push('/home')" class="button">🏠 Voltar</button>
+
+    <!-- 🔥 Modal de Edição -->
+    <div v-if="estudoEditando" class="modal">
+      <div class="modal-content">
+        <h2>✏️ Editar Estudo</h2>
+        <label>📚 Novo Título</label>
+        <input
+          v-model="novoTitulo"
+          class="input"
+          placeholder="Digite o novo título"
+        />
+
+        <label>⏳ Novo Tempo (minutos)</label>
+        <input
+          v-model="novoTempo"
+          type="number"
+          class="input"
+          placeholder="Digite o tempo"
+        />
+
+        <div class="modal-actions">
+          <button @click="salvarEdicao" class="save-button">💾 Salvar</button>
+          <button @click="cancelarEdicao" class="cancel-button">
+            ❌ Cancelar
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -146,5 +240,99 @@ const totalTempoEstudado = computed(() => {
 /* ⏬ Efeito ao clicar */
 .button:active {
   transform: scale(0.95);
+}
+.user-name {
+  font-size: 0.9rem;
+  color: #555;
+  margin-top: 3px;
+}
+
+/* 🔥 Botões de Ações */
+.actions {
+  display: flex;
+  gap: 10px;
+}
+
+.edit-button,
+.delete-button {
+  padding: 6px 10px;
+  font-size: 14px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.edit-button {
+  background: #4caf50;
+  color: white;
+  border: none;
+}
+
+.edit-button:hover {
+  background: #388e3c;
+}
+
+.delete-button {
+  background: #e53e3e;
+  color: white;
+  border: none;
+}
+
+.delete-button:hover {
+  background: #c53030;
+}
+
+/* 🔥 Modal de Edição */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  width: 300px;
+  text-align: center;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+}
+
+.save-button {
+  background: #6a11cb;
+  color: white;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.save-button:hover {
+  background: #5907a5;
+}
+
+.cancel-button {
+  background: #e53e3e;
+  color: white;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.cancel-button:hover {
+  background: #c53030;
 }
 </style>

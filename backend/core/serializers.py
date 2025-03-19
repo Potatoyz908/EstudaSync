@@ -3,9 +3,10 @@ from .models import Estudo, Pontuacao, Usuario
 
 class EstudoSerializer(serializers.ModelSerializer):
     usuario_id = serializers.PrimaryKeyRelatedField(queryset=Usuario.objects.all(), source='usuario')
+    usuario_nome = serializers.CharField(source='usuario.nome', read_only=True)
     class Meta:
         model = Estudo
-        fields = ['id', 'usuario_id', 'titulo', 'tempo_estudado', 'data']
+        fields = ['id', 'usuario_id', 'usuario_nome', 'titulo', 'tempo_estudado', 'data']
 
 class PontuacaoSerializer(serializers.ModelSerializer):
     usuario_nome = serializers.CharField(source='usuario.nome', read_only=True)
