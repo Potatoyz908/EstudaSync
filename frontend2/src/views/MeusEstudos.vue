@@ -13,6 +13,12 @@ onMounted(() => {
   store.fetchEstudos();
 });
 
+const tituloTempoEstudado = computed(() => {
+  return store.mostrarTodosEstudos
+    ? "⏳ Tempo Total do Grupo"
+    : "⏳ Meu Tempo de Estudo";
+});
+
 // 🔥 Converte minutos para HH:MM:SS
 const formatarTempo = (minutos) => {
   const horas = Math.floor(minutos / 60);
@@ -72,7 +78,9 @@ const cancelarEdicao = () => {
 <template>
   <div class="container">
     <h1>📖 Meus Estudos</h1>
-    <p class="total">⏳ Total: {{ totalTempoEstudado }} horas</p>
+    <p class="total">
+      {{ tituloTempoEstudado }}: {{ totalTempoEstudado }} horas
+    </p>
 
     <!-- Botão para alternar entre ver apenas os próprios estudos ou todos -->
     <button @click="store.alternarFiltroEstudos" class="toggle-button">
@@ -160,6 +168,8 @@ const cancelarEdicao = () => {
   background: #f5f5f5;
   border-radius: 10px;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  max-height: 90vh;
+  overflow-y: auto;
 }
 
 /* 🎯 Estilização do Total */
