@@ -10,18 +10,30 @@ onMounted(() => {
   store.fetchEstudos();
 });
 
+// 🔥 Converte minutos para HH:MM:SS
+const formatarTempo = (minutos) => {
+  const horas = Math.floor(minutos / 60);
+  const minutosRestantes = minutos % 60;
+  return `${String(horas).padStart(2, "0")}:${String(minutosRestantes).padStart(
+    2,
+    "0"
+  )}:00`;
+};
+
+// 🔥 Computed para exibir tempo total formatado
 const totalTempoEstudado = computed(() => {
-  return store.estudos.reduce(
+  const totalMinutos = store.estudos.reduce(
     (total, estudo) => total + estudo.tempo_estudado,
     0
   );
+  return formatarTempo(totalMinutos);
 });
 </script>
 
 <template>
   <div class="container">
     <h1>📖 Meus Estudos</h1>
-    <p class="total">⏳ Total: {{ totalTempoEstudado }} minutos</p>
+    <p class="total">⏳ Total: {{ totalTempoEstudado }} horas</p>
 
     <!-- Botão para alternar entre ver apenas os próprios estudos ou todos -->
     <button @click="store.alternarFiltroEstudos" class="toggle-button">
@@ -35,7 +47,7 @@ const totalTempoEstudado = computed(() => {
     <ul v-if="store.estudos.length" class="estudo-list">
       <li v-for="estudo in store.estudos" :key="estudo.id" class="estudo-item">
         <span class="titulo">📚 {{ estudo.titulo }}</span> - ⏱️
-        {{ estudo.tempo_estudado }} min
+        {{ formatarTempo(estudo.tempo_estudado) }}
       </li>
     </ul>
     <p v-else class="message">⚠️ Nenhum estudo registrado ainda.</p>
